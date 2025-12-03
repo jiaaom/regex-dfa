@@ -45,15 +45,15 @@ impl Regex {
     /// Creates a new `Regex` from a regular expression string, but only if it doesn't require too
     /// many states.
     pub fn new_bounded(re: &str, max_states: usize) -> crate::Result<Regex> {
-        let nfa = (Nfa::from_regex(re)?);
+        let nfa = Nfa::from_regex(re)?;
         let nfa = nfa.remove_looks();
 
         let eng = if nfa.is_empty() {
             Box::new(EmptyEngine) as Box<dyn Engine<u8>>
         } else if nfa.is_anchored() {
-            Box::new((Regex::make_anchored(nfa, max_states)?)) as Box<dyn Engine<u8>>
+            Box::new(Regex::make_anchored(nfa, max_states)?) as Box<dyn Engine<u8>>
         } else {
-            Box::new((Regex::make_forward_backward(nfa, max_states)?)) as Box<dyn Engine<u8>>
+            Box::new(Regex::make_forward_backward(nfa, max_states)?) as Box<dyn Engine<u8>>
         };
 
         Ok(Regex { engine: eng })
@@ -61,7 +61,7 @@ impl Regex {
 
     fn make_anchored(nfa: Nfa<u32, NoLooks>, max_states: usize)
     -> crate::Result<AnchoredEngine<u8>> {
-        let nfa = (nfa.byte_me(max_states)?);
+        let nfa = nfa.byte_me(max_states)?;
         let dfa = (nfa.determinize(max_states)?)
             .optimize()
             .map_ret(|(_, bytes)| bytes);

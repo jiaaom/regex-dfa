@@ -132,7 +132,6 @@
 
 use crate::look::Look;
 use crate::nfa::{Accept, HasLooks, LookPair, Nfa, NoLooks, StateIdx};
-use std::cmp::max;
 use std::collections::HashSet;
 use std::ops::Deref;
 use range_map::{Range, RangeSet};
@@ -164,7 +163,7 @@ impl Nfa<u32, HasLooks> {
 
     /// Creates a new Nfa from a regex string.
     pub fn from_regex(re: &str) -> crate::Result<Nfa<u32, HasLooks>> {
-        let expr = (Expr::parse(re)?);
+        let expr = Expr::parse(re)?;
         let mut ret = Nfa::new();
 
         ret.add_state(Accept::Never);

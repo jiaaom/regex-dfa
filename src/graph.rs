@@ -117,6 +117,7 @@ pub trait Graph {
     ///
     /// Instead of running on the full graph, runs on the graph where pairs in `cuts` are
     /// disconnected.
+    #[allow(dead_code)]
     fn dfs_with_cut<Inits, Cuts, Visit, Cycle>(
         &self,
         init: Inits,

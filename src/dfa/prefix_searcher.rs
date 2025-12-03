@@ -128,6 +128,8 @@ impl PrefixSearcher {
 // state. That sequence need not necessarily correspond to a unique path in the DFA, however.
 // Therefore, we store the sequence of bytes and also a set of possible paths that we might have
 // traversed while reading those bytes.
+// This code is kept for potential future use
+#[allow(dead_code)]
 #[derive(Clone, Debug, PartialEq)]
 pub struct CriticalSegment {
     bytes: Vec<u8>,
@@ -136,6 +138,7 @@ pub struct CriticalSegment {
 
 // The stdlib seems to have searching functions for &str, but not for &[u8]. If they get added, we
 // can remove this.
+#[allow(dead_code)]
 fn find(haystack: &[u8], needle: &[u8]) -> Option<usize> {
     haystack.windows(needle.len())
         .enumerate()

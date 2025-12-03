@@ -264,7 +264,7 @@ impl Nfa<u32, NoLooks> {
             // can merge a bunch of Utf8Sequences before adding them, which saves a bunch of
             // states.
             for (tgt, transitions) in state.consuming.ranges_values().group_by(|x| x.1) {
-                ret.add_utf8_sequences(i, transitions.into_iter().map(|x| x.0), tgt, max_states);
+                ret.add_utf8_sequences(i, transitions.into_iter().map(|x| x.0), tgt, max_states)?;
             }
         }
         Ok(ret)
@@ -689,7 +689,7 @@ impl<'a> Determinizer<'a> {
                 .map(|(_, y)| y)
                 .collect();
             if !init_states.is_empty() {
-                let new_state_idx = (self.add_state(init_states)?);
+                let new_state_idx = self.add_state(init_states)?;
                 self.dfa.init[look.as_usize()] = Some(new_state_idx);
             }
         }

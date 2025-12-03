@@ -87,7 +87,7 @@ impl Partition {
     }
 
     /// Iterates over the sets in this partition, each of which is realized by a `&[usize]`.
-    pub fn iter(&self) -> PartitionIter {
+    pub fn iter(&self) -> PartitionIter<'_> {
         PartitionIter {
             next_set_idx: 0,
             partition: self,

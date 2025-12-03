@@ -43,10 +43,6 @@ bench = true
 name = "examples"
 path = "tests/matches.rs"
 
-[[test]]
-name = "crate"
-path = "src/lib.rs"
-
 [profile.bench]
 debug = true
 lto = true
