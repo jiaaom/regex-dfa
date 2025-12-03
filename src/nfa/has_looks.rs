@@ -130,8 +130,8 @@
 //! non-consuming transition leads to an accepting state, it means that the source of that
 //! transition should become a conditionally accepting state.
 
-use look::Look;
-use nfa::{Accept, HasLooks, LookPair, Nfa, NoLooks, StateIdx};
+use crate::look::Look;
+use crate::nfa::{Accept, HasLooks, LookPair, Nfa, NoLooks, StateIdx};
 use std::cmp::max;
 use std::collections::HashSet;
 use std::ops::Deref;
@@ -163,8 +163,8 @@ impl Nfa<u32, HasLooks> {
     }
 
     /// Creates a new Nfa from a regex string.
-    pub fn from_regex(re: &str) -> ::Result<Nfa<u32, HasLooks>> {
-        let expr = try!(Expr::parse(re));
+    pub fn from_regex(re: &str) -> crate::Result<Nfa<u32, HasLooks>> {
+        let expr = (Expr::parse(re)?);
         let mut ret = Nfa::new();
 
         ret.add_state(Accept::Never);
@@ -542,9 +542,9 @@ impl Nfa<u32, HasLooks> {
 
 #[cfg(test)]
 mod tests {
-    use look::Look;
-    use nfa::{Accept, NoLooks, Nfa, StateIdx};
-    use nfa::tests::{re_nfa, trans_nfa};
+    use crate::look::Look;
+    use crate::nfa::{Accept, NoLooks, Nfa, StateIdx};
+    use crate::nfa::tests::{re_nfa, trans_nfa};
 
     // Creates an Nfa with the given transitions, with initial state zero, and with the final
     // state the only accepting state.

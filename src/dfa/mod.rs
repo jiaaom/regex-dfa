@@ -10,22 +10,22 @@ mod trie;
 mod prefix_searcher;
 mod minimizer;
 
-use dfa::minimizer::Minimizer;
-use dfa::prefix_searcher::PrefixSearcher;
-use graph::Graph;
-use look::Look;
+use crate::dfa::minimizer::Minimizer;
+use crate::dfa::prefix_searcher::PrefixSearcher;
+use crate::graph::Graph;
+use crate::look::Look;
 use itertools::Itertools;
-use nfa::{Accept, StateIdx};
+use crate::nfa::{Accept, StateIdx};
+use crate::partition::Partition;
 use range_map::{RangeMap, RangeMultiMap};
-use refinery::Partition;
-use runner::program::TableInsts;
+use crate::runner::program::TableInsts;
 use std;
 use std::fmt::{Debug, Formatter};
 use std::hash::Hash;
 use std::mem;
 use std::u32;
 
-pub use dfa::prefix_searcher::PrefixPart;
+pub use crate::dfa::prefix_searcher::PrefixPart;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct State<Ret> {
@@ -389,30 +389,30 @@ impl<Ret: RetTrait> Dfa<Ret> {
 
 impl<Ret: Debug> Debug for Dfa<Ret> {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
-        try!(f.write_fmt(format_args!("Dfa ({} states):\n", self.states.len())));
+        f.write_fmt(format_args!("Dfa ({} states):\n", self.states.len()))?;
 
-        try!(f.write_fmt(format_args!("Init: {:?}\n", self.init)));
+        f.write_fmt(format_args!("Init: {:?}\n", self.init))?;
 
         for (st_idx, st) in self.states.iter().enumerate().take(40) {
-            try!(f.write_fmt(format_args!("\tState {} (accepting: {:?}):\n", st_idx, st.accept)));
+            f.write_fmt(format_args!("\tState {} (accepting: {:?}):\n", st_idx, st.accept))?;
             if let Some(ref ret) = st.ret {
-                try!(f.write_fmt(format_args!("\t\t{:?}\n", ret)));
+                f.write_fmt(format_args!("\t\t{:?}\n", ret))?;
             }
 
             if !st.transitions.is_empty() {
-                try!(f.write_str("\t\tTransitions:\n"));
+                f.write_str("\t\tTransitions:\n")?;
                 // Cap it at 5 transitions, since it gets unreadable otherwise.
                 for &(range, target) in st.transitions.ranges_values().take(5) {
-                    try!(f.write_fmt(format_args!("\t\t\t{} -- {} => {}\n",
-                                                  range.start, range.end, target)));
+                    f.write_fmt(format_args!("\t\t\t{} -- {} => {}\n",
+                                                  range.start, range.end, target))?;
                 }
                 if st.transitions.num_ranges() > 5 {
-                    try!(f.write_str("\t\t\t...\n"));
+                    f.write_str("\t\t\t...\n")?;
                 }
             }
         }
         if self.states.len() > 40 {
-            try!(f.write_fmt(format_args!("\t...({} more states)\n", self.states.len() - 40)));
+            f.write_fmt(format_args!("\t...({} more states)\n", self.states.len() - 40))?;
         }
         Ok(())
     }
@@ -420,26 +420,26 @@ impl<Ret: Debug> Debug for Dfa<Ret> {
 
 #[cfg(test)]
 pub mod tests {
-    use dfa::*;
+    use crate::dfa::*;
     use itertools::Itertools;
-    use look::Look;
-    use nfa::{Accept, Nfa, StateIdx};
+    use crate::look::Look;
+    use crate::nfa::{Accept, Nfa, StateIdx};
     use range_map::{Range, RangeMap};
     use std::usize;
 
     // Creates a non-backtracking dfa from a regex string.
-    pub fn make_dfa_bounded(re: &str, max_states: usize) -> ::Result<Dfa<(Look, u8)>> {
-        let nfa = try!(Nfa::from_regex(re));
+    pub fn make_dfa_bounded(re: &str, max_states: usize) -> crate::Result<Dfa<(Look, u8)>> {
+        let nfa = (Nfa::from_regex(re)?);
         let nfa = nfa.remove_looks();
         println!("after remove_looks: {:?}", nfa);
-        let nfa = try!(nfa.byte_me(max_states));
+        let nfa = (nfa.byte_me(max_states)?);
         println!("after byte: {:?}", nfa);
 
-        let dfa = try!(nfa.determinize(max_states));
+        let dfa = (nfa.determinize(max_states)?);
         Ok(dfa.optimize())
     }
 
-    pub fn make_dfa(re: &str) -> ::Result<Dfa<(Look, u8)>> {
+    pub fn make_dfa(re: &str) -> crate::Result<Dfa<(Look, u8)>> {
         make_dfa_bounded(re, usize::MAX)
     }
 

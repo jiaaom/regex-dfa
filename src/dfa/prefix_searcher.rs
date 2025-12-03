@@ -6,9 +6,9 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use dfa::{Dfa, RetTrait};
-use dfa::trie::Trie;
-use nfa::{Accept, StateIdx};
+use crate::dfa::{Dfa, RetTrait};
+use crate::dfa::trie::Trie;
+use crate::nfa::{Accept, StateIdx};
 use std::cmp::{Ordering, PartialOrd};
 use std::collections::{HashSet, VecDeque};
 use std::mem::swap;
@@ -239,8 +239,8 @@ where I: Iterator<Item=&'a [u8]>, J: Iterator<Item=&'a [u8]> {
 
 #[cfg(test)]
 mod tests {
-    use dfa;
-    use look::Look;
+    use crate::dfa;
+    use crate::look::Look;
     use quickcheck::{QuickCheck, quickcheck, StdGen, TestResult};
     use rand;
     use super::*;

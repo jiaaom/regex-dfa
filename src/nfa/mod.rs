@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use look::Look;
+use crate::look::Look;
 use num_traits::PrimInt;
 use range_map::{Range, RangeMultiMap};
 use std::fmt::{self, Debug, Formatter};
@@ -278,38 +278,38 @@ impl<Tok: Debug + PrimInt, L: Lookability> Nfa<Tok, L> {
 
 impl<Tok: Debug + PrimInt, L: Lookability> Debug for Nfa<Tok, L> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        try!(f.write_fmt(format_args!("Nfa ({} states):\n", self.states.len())));
+        f.write_fmt(format_args!("Nfa ({} states):\n", self.states.len()))?;
 
-        try!(f.write_fmt(format_args!("Init: {:?}\n", self.init)));
+        f.write_fmt(format_args!("Init: {:?}\n", self.init))?;
 
         for (st_idx, st) in self.states.iter().enumerate().take(40) {
-            try!(f.write_fmt(format_args!("\tState {} ({:?}):\n", st_idx, st.accept)));
+            f.write_fmt(format_args!("\tState {} ({:?}):\n", st_idx, st.accept))?;
 
             if st.accept != Accept::Never {
-                try!(f.write_fmt(format_args!("\t\tlook {:?}, tokens {:?}, state {:?}\n",
-                                              st.accept_look, st.accept_tokens, st.accept_state)));
+                f.write_fmt(format_args!("\t\tlook {:?}, tokens {:?}, state {:?}\n",
+                                              st.accept_look, st.accept_tokens, st.accept_state))?;
             }
             if !st.consuming.is_empty() {
-                try!(f.write_str("\t\tConsuming:\n"));
+                f.write_str("\t\tConsuming:\n")?;
                 // Cap it at 10 transitions, since it gets unreadable otherwise.
                 for &(range, target) in st.consuming.ranges_values().take(10) {
-                    try!(f.write_fmt(format_args!("\t\t\t{:?} -- {:?} => {}\n",
-                                                  range.start, range.end, target)));
+                    f.write_fmt(format_args!("\t\t\t{:?} -- {:?} => {}\n",
+                                                  range.start, range.end, target))?;
                 }
                 if st.consuming.num_ranges() > 10 {
-                    try!(f.write_str("\t\t\t...\n"));
+                    f.write_str("\t\t\t...\n")?;
                 }
             }
             if !st.looking.is_empty() {
-                try!(f.write_str("\t\tLooking:\n"));
+                f.write_str("\t\tLooking:\n")?;
                 for look in &st.looking {
-                    try!(f.write_fmt(format_args!("\t\t\t({:?},{:?}) => {}\n",
-                        look.behind, look.ahead, look.target_state)));
+                    f.write_fmt(format_args!("\t\t\t({:?},{:?}) => {}\n",
+                        look.behind, look.ahead, look.target_state))?;
                 }
             }
         }
         if self.states.len() > 40 {
-            try!(f.write_fmt(format_args!("\t... ({} more states)\n", self.states.len() - 40)));
+            f.write_fmt(format_args!("\t... ({} more states)\n", self.states.len() - 40))?;
         }
         Ok(())
     }
@@ -317,7 +317,7 @@ impl<Tok: Debug + PrimInt, L: Lookability> Debug for Nfa<Tok, L> {
 
 #[cfg(test)]
 pub mod tests {
-    use nfa::{Accept, NoLooks, Nfa, StateIdx};
+    use crate::nfa::{Accept, NoLooks, Nfa, StateIdx};
     use num_traits::PrimInt;
     use range_map::Range;
     use std::fmt::Debug;

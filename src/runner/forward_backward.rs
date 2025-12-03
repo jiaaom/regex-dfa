@@ -8,11 +8,11 @@
 
 use std::fmt::Debug;
 //use dfa::{Dfa, PrefixPart, RetTrait};
-use dfa::PrefixPart;
+use crate::dfa::PrefixPart;
 use itertools::Itertools;
 use memchr::memchr;
-use runner::Engine;
-use runner::program::TableInsts;
+use crate::runner::Engine;
+use crate::runner::program::TableInsts;
 
 #[derive(Clone, Debug)]
 pub struct ForwardBackwardEngine<Ret> {
@@ -87,7 +87,7 @@ impl<Ret: Copy + Debug + 'static> Engine<Ret> for ForwardBackwardEngine<Ret> {
         }
     }
 
-    fn clone_box(&self) -> Box<Engine<Ret>> {
+    fn clone_box(&self) -> Box<dyn Engine<Ret>> {
         Box::new(self.clone())
     }
 }
@@ -198,7 +198,7 @@ impl Prefix {
 
 #[cfg(test)]
 mod tests {
-    use dfa::PrefixPart;
+    use crate::dfa::PrefixPart;
     use super::*;
 
     fn pref(strs: Vec<&str>) -> Prefix {

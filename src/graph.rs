@@ -6,8 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use dfa::{Dfa, RetTrait};
-use nfa::{Nfa, NoLooks, StateIdx};
+use crate::dfa::{Dfa, RetTrait};
+use crate::nfa::{Nfa, NoLooks, StateIdx};
 use num_traits::PrimInt;
 use std::collections::HashSet;
 use std::fmt::Debug;
@@ -23,7 +23,7 @@ pub enum DfsInstruction {
 pub trait Graph {
     fn num_states(&self) -> usize;
 
-    fn neighbors<'a>(&'a self, i: StateIdx) -> Box<Iterator<Item=StateIdx> + 'a>;
+    fn neighbors<'a>(&'a self, i: StateIdx) -> Box<dyn Iterator<Item=StateIdx> + 'a>;
 
     /// Does a depth-first search of this graph.
     ///
@@ -41,7 +41,7 @@ pub trait Graph {
     {
         // Pairs of (state, children_left_to_explore).
         let mut stack: Vec<StateIdx> = Vec::with_capacity(self.num_states());
-        let mut remaining_children_stack: Vec<Box<Iterator<Item=StateIdx>>>
+        let mut remaining_children_stack: Vec<Box<dyn Iterator<Item=StateIdx>>>
             = Vec::with_capacity(self.num_states());
         let mut visiting: Vec<bool> = vec![false; self.num_states()];
         let mut done: Vec<bool> = vec![false; self.num_states()];
@@ -165,7 +165,7 @@ impl<T: RetTrait> Graph for Dfa<T> {
         Dfa::num_states(self)
     }
 
-    fn neighbors<'a>(&'a self, i: StateIdx) -> Box<Iterator<Item=StateIdx> + 'a> {
+    fn neighbors<'a>(&'a self, i: StateIdx) -> Box<dyn Iterator<Item=StateIdx> + 'a> {
         Box::new(self.transitions(i).ranges_values().map(|x| x.1))
     }
 }
@@ -175,15 +175,15 @@ impl<Tok: Debug + PrimInt> Graph for Nfa<Tok, NoLooks> {
         Nfa::num_states(self)
     }
 
-    fn neighbors<'a>(&'a self, i: usize) -> Box<Iterator<Item=usize> + 'a> {
+    fn neighbors<'a>(&'a self, i: usize) -> Box<dyn Iterator<Item=usize> + 'a> {
         Box::new(self.consuming(i).ranges_values().map(|x| x.1))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use dfa::tests::make_dfa;
-    use graph::Graph;
+    use crate::dfa::tests::make_dfa;
+    use crate::graph::Graph;
 
     #[test]
     fn cycles() {

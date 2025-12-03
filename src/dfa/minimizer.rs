@@ -6,10 +6,10 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use dfa::{Dfa, RetTrait};
-use nfa::{Accept, StateIdx, StateSet};
+use crate::dfa::{Dfa, RetTrait};
+use crate::nfa::{Accept, StateIdx, StateSet};
+use crate::partition::Partition;
 use range_map::{RangeMultiMap, RangeSet};
-use refinery::Partition;
 use std::collections::{HashSet, HashMap};
 
 pub struct Minimizer {

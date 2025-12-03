@@ -10,7 +10,7 @@
 
 use range_map::{Range, RangeSet};
 use std::cmp::Ordering;
-use unicode::PERLW;
+use crate::unicode::PERLW;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Ord)]
 pub enum Look {
@@ -145,7 +145,7 @@ mod tests {
 
     impl Arbitrary for Look {
         fn arbitrary<G: Gen>(g: &mut G) -> Look {
-            use look::Look::*;
+            use Look::*;
 
             *g.choose(&[Full, WordChar, NotWordChar, NewLine, Boundary, Empty]).unwrap()
         }

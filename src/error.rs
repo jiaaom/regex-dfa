@@ -17,13 +17,12 @@ pub enum Error {
     InvalidEngine(&'static str),
 }
 
-use error::Error::*;
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            RegexSyntax(ref e) => write!(f, "Regex syntax error: {}", e),
-            TooManyStates => write!(f, "State overflow"),
-            InvalidEngine(s) => write!(f, "Invalid engine: {}", s),
+            Error::RegexSyntax(ref e) => write!(f, "Regex syntax error: {}", e),
+            Error::TooManyStates => write!(f, "State overflow"),
+            Error::InvalidEngine(s) => write!(f, "Invalid engine: {}", s),
         }
     }
 }
@@ -31,16 +30,16 @@ impl fmt::Display for Error {
 impl error::Error for Error {
     fn description(&self) -> &str {
         match *self {
-            RegexSyntax(ref e) => e.description(),
-            TooManyStates => "This NFA required too many states to represent as a DFA.",
-            InvalidEngine(_) => "The regex was not compatible with the requested engine.",
+            Error::RegexSyntax(_) => "Regex syntax error",
+            Error::TooManyStates => "This NFA required too many states to represent as a DFA.",
+            Error::InvalidEngine(_) => "The regex was not compatible with the requested engine.",
         }
     }
 }
 
 impl From<regex_syntax::Error> for Error {
     fn from(e: regex_syntax::Error) -> Error {
-        RegexSyntax(e)
+        Error::RegexSyntax(e)
     }
 }
 

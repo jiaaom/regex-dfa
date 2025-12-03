@@ -6,11 +6,11 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use dfa::Dfa;
-use error::Error;
+use crate::dfa::Dfa;
+use crate::error::Error;
 use itertools::Itertools;
-use look::Look;
-use nfa::{Accept, Nfa, NoLooks, State, StateIdx, StateSet};
+use crate::look::Look;
+use crate::nfa::{Accept, Nfa, NoLooks, State, StateIdx, StateSet};
 use num_traits::PrimInt;
 use range_map::{Range, RangeMap, RangeMultiMap};
 use std::{char, u8, usize};
@@ -83,7 +83,7 @@ impl MergedUtf8Sequences {
         }
     }
 
-    fn from_sequences<'a, I>(iter: I) -> Box<Iterator<Item=MergedUtf8Sequences> + 'a>
+    fn from_sequences<'a, I>(iter: I) -> Box<dyn Iterator<Item=MergedUtf8Sequences> + 'a>
     where I: Iterator<Item=Utf8Sequence> + 'a {
         fn head(u: &Utf8Sequence) -> Vec<Utf8Range> {
             let len = u.len();
@@ -96,7 +96,7 @@ impl MergedUtf8Sequences {
             .map(|(_, seqs)| MergedUtf8Sequences::merge(seqs.into_iter())))
     }
 
-    fn from_ranges<'a, I>(iter: I) -> Box<Iterator<Item=MergedUtf8Sequences> + 'a>
+    fn from_ranges<'a, I>(iter: I) -> Box<dyn Iterator<Item=MergedUtf8Sequences> + 'a>
     where I: Iterator<Item=Range<u32>> + 'a {
         MergedUtf8Sequences::from_sequences(
             iter.filter_map(to_char_pair)
@@ -245,7 +245,7 @@ impl<Tok: Debug + PrimInt> Nfa<Tok, NoLooks> {
 
 impl Nfa<u32, NoLooks> {
     /// Converts this `Nfa` into one that consumes the input byte-by-byte.
-    pub fn byte_me(self, max_states: usize) -> ::Result<Nfa<u8, NoLooks>> {
+    pub fn byte_me(self, max_states: usize) -> crate::Result<Nfa<u8, NoLooks>> {
         let mut ret = Nfa::<u8, NoLooks> {
             states: self.states.iter().map(|s| State {
                 accept: s.accept,
@@ -264,7 +264,7 @@ impl Nfa<u32, NoLooks> {
             // can merge a bunch of Utf8Sequences before adding them, which saves a bunch of
             // states.
             for (tgt, transitions) in state.consuming.ranges_values().group_by(|x| x.1) {
-                try!(ret.add_utf8_sequences(i, transitions.into_iter().map(|x| x.0), tgt, max_states));
+                ret.add_utf8_sequences(i, transitions.into_iter().map(|x| x.0), tgt, max_states);
             }
         }
         Ok(ret)
@@ -273,7 +273,7 @@ impl Nfa<u32, NoLooks> {
 
 impl Nfa<u8, NoLooks> {
     /// Converts this `Nfa` into a `Dfa`.
-    pub fn determinize(&self, max_states: usize) -> ::Result<Dfa<(Look, u8)>> {
+    pub fn determinize(&self, max_states: usize) -> crate::Result<Dfa<(Look, u8)>> {
         Determinizer::determinize(self, max_states, MatchChoice::TransitionOrder, self.init.clone())
     }
 
@@ -282,7 +282,7 @@ impl Nfa<u8, NoLooks> {
     /// Whenever this `Nfa` matches some text, the `Dfa` also will. But if this `Nfa` has multiple
     /// possible endpoints for a match then the returned `Dfa` is only guaranteed to match the
     /// longest one.
-    pub fn determinize_longest(&self, max_states: usize) -> ::Result<Dfa<(Look, u8)>> {
+    pub fn determinize_longest(&self, max_states: usize) -> crate::Result<Dfa<(Look, u8)>> {
         Determinizer::determinize(self, max_states, MatchChoice::LongestMatch, self.init.clone())
     }
 
@@ -292,7 +292,7 @@ impl Nfa<u8, NoLooks> {
     /// the same strings of bytes reversed.
     ///
     /// Note that this loses information about match priorities.
-    pub fn reverse(&self, max_states: usize) -> ::Result<Nfa<u8, NoLooks>> {
+    pub fn reverse(&self, max_states: usize) -> crate::Result<Nfa<u8, NoLooks>> {
         let mut ret = self.reversed_simple();
 
         // Turn our initial states into ret's accepting states.
@@ -324,7 +324,7 @@ impl Nfa<u8, NoLooks> {
                         &REV_NOT_WORD_CHAR_DFA
                     };
                     let accept_state = ret.add_look_ahead_state(look, 1, i);
-                    try!(ret.add_min_utf8_sequences(i, dfa, accept_state, max_states));
+                    (ret.add_min_utf8_sequences(i, dfa, accept_state, max_states)?);
                 },
                 Look::Empty => {
                     panic!("Empty cannot be an init look");
@@ -355,7 +355,7 @@ impl Nfa<u8, NoLooks> {
     ///
     /// The result is actually a little bit different, because `.` matches a whole code point,
     /// whereas the `^.*` that we add works at the byte level.
-    pub fn anchor(mut self, max_states: usize) -> ::Result<Nfa<u8, NoLooks>> {
+    pub fn anchor(mut self, max_states: usize) -> crate::Result<Nfa<u8, NoLooks>> {
         let loop_accept = self.init_accept(Look::Full);
         let loop_state = self.add_state(loop_accept);
         let init_accept = self.init_accept(Look::Boundary);
@@ -388,8 +388,8 @@ impl Nfa<u8, NoLooks> {
                     let dfa: &Dfa<_> =
                         if look == Look::WordChar { &WORD_CHAR_DFA } else { &NOT_WORD_CHAR_DFA };
 
-                    try!(self.add_min_utf8_sequences(loop_state, dfa, st_idx, max_states));
-                    try!(self.add_min_utf8_sequences(init_state, dfa, st_idx, max_states));
+                    (self.add_min_utf8_sequences(loop_state, dfa, st_idx, max_states)?);
+                    (self.add_min_utf8_sequences(init_state, dfa, st_idx, max_states)?);
                 },
                 Look::Empty => {
                     panic!("Cannot start with an empty look");
@@ -437,7 +437,7 @@ impl Nfa<u8, NoLooks> {
         dfa: &Dfa<(Look, u8)>,
         end_state: StateIdx,
         max_states: usize,
-    ) -> ::Result<()> {
+    ) -> crate::Result<()> {
         let offset = self.states.len();
         // If end_accept is true, then it isn't actually important that we end in state
         // `end_state`: we can create a new look_ahead state to end in.
@@ -506,7 +506,7 @@ impl Nfa<u8, NoLooks> {
         ranges: I,
         end_state: StateIdx,
         max_states: usize
-    ) -> ::Result<()>
+    ) -> crate::Result<()>
     where I: Iterator<Item=Range<u32>> {
         for m in MergedUtf8Sequences::from_ranges(ranges) {
             self.add_utf8_sequence(start_state, end_state, m);
@@ -573,9 +573,9 @@ impl<'a> Determinizer<'a> {
     fn determinize(nfa: &Nfa<u8, NoLooks>,
                    max_states: usize,
                    match_choice: MatchChoice,
-                   init: Vec<(Look, StateIdx)>) -> ::Result<Dfa<(Look, u8)>> {
+                   init: Vec<(Look, StateIdx)>) -> crate::Result<Dfa<(Look, u8)>> {
         let mut det = Determinizer::new(nfa, max_states, match_choice);
-        try!(det.run(init));
+        (det.run(init)?);
         Ok(det.dfa)
     }
 
@@ -652,7 +652,7 @@ impl<'a> Determinizer<'a> {
     //
     // If the state already exists, returns the index of the old one. If there are too many states,
     // returns an error.
-    fn add_state(&mut self, mut s: StateSet) -> ::Result<StateIdx> {
+    fn add_state(&mut self, mut s: StateSet) -> crate::Result<StateIdx> {
         // When we choose our matches by transition order, discard any states that have lower
         // priority than the best match we've found.
         if self.match_choice == MatchChoice::TransitionOrder {
@@ -678,7 +678,7 @@ impl<'a> Determinizer<'a> {
 
     // Creates a deterministic automaton representing the same language as our `nfa`.
     // Puts the new Dfa in self.dfa.
-    fn run(&mut self, init: Vec<(Look, StateIdx)>) -> ::Result<()> {
+    fn run(&mut self, init: Vec<(Look, StateIdx)>) -> crate::Result<()> {
         if self.nfa.states.is_empty() {
             return Ok(());
         }
@@ -689,7 +689,7 @@ impl<'a> Determinizer<'a> {
                 .map(|(_, y)| y)
                 .collect();
             if !init_states.is_empty() {
-                let new_state_idx = try!(self.add_state(init_states));
+                let new_state_idx = (self.add_state(init_states)?);
                 self.dfa.init[look.as_usize()] = Some(new_state_idx);
             }
         }
@@ -702,7 +702,7 @@ impl<'a> Determinizer<'a> {
 
             let mut dfa_trans = Vec::new();
             for &(range, ref target) in trans.ranges_values() {
-                let target_idx = try!(self.add_state(target.clone()));
+                let target_idx = self.add_state(target.clone())?;
                 dfa_trans.push((range, target_idx));
             }
             self.dfa.set_transitions(state_idx, dfa_trans.into_iter().collect());
@@ -713,10 +713,10 @@ impl<'a> Determinizer<'a> {
 
 #[cfg(test)]
 mod tests {
-    use look::Look;
-    use dfa::Dfa;
-    use nfa::{Accept, Nfa, NoLooks};
-    use nfa::tests::{re_nfa, trans_nfa, trans_range_nfa};
+    use crate::look::Look;
+    use crate::dfa::Dfa;
+    use crate::nfa::{Accept, Nfa, NoLooks};
+    use crate::nfa::tests::{re_nfa, trans_nfa, trans_range_nfa};
     use range_map::Range;
     use std::usize;
 

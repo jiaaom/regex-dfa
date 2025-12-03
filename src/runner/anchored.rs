@@ -7,8 +7,8 @@
 // except according to those terms.
 
 use std::fmt::Debug;
-use runner::Engine;
-use runner::program::TableInsts;
+use crate::runner::Engine;
+use crate::runner::program::TableInsts;
 
 #[derive(Clone, Debug)]
 pub struct AnchoredEngine<Ret> {
@@ -35,7 +35,7 @@ impl<Ret: Copy + Debug + 'static> Engine<Ret> for AnchoredEngine<Ret> {
         }
     }
 
-    fn clone_box(&self) -> Box<Engine<Ret>> {
+    fn clone_box(&self) -> Box<dyn Engine<Ret>> {
         Box::new(self.clone())
     }
 }

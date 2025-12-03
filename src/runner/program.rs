@@ -39,36 +39,36 @@ pub struct TableInsts<Ret> {
 
 impl<Ret: Debug> Debug for TableInsts<Ret> {
     fn fmt(&self, f: &mut Formatter) -> Result<(), FmtError> {
-        try!(f.write_fmt(format_args!("TableInsts ({} log_classes, {} instructions):\n",
+        f.write_fmt(format_args!("TableInsts ({} log_classes, {} instructions)?:\n",
                                       self.log_num_classes,
-                                      self.accept.len())));
-        try!(f.write_str("Byte classes: "));
-        try!(f.debug_map()
+                                      self.accept.len()))?;
+        f.write_str("Byte classes: ")?;
+        f.debug_map()
             .entries((0..256).map(|b| (b, self.byte_class[b])))
-            .finish());
+            .finish()?;
 
         let num_classes = 1 << self.log_num_classes;
         for idx in 0..self.accept.len() {
-            try!(f.write_fmt(format_args!("State {}:\n", idx)));
-            try!(f.debug_map()
+            f.write_fmt(format_args!("State {}:\n", idx))?;
+            f.debug_map()
                 .entries((0usize..num_classes)
                     .map(|c| (c, self.table[(idx << self.log_num_classes) + c]))
                     .filter(|x| x.1 != u32::MAX))
-                .finish());
-            try!(f.write_str("\n"));
+                .finish()?;
+            f.write_str("\n")?;
         }
 
-        try!(f.write_str("Accept: "));
+        f.write_str("Accept: ")?;
         for idx in 0..self.accept.len() {
             if let Some(ref ret) = self.accept[idx] {
-                try!(f.write_fmt(format_args!("{} -> {:?}, ", idx, ret)));
+                f.write_fmt(format_args!("{} -> {:?}, ", idx, ret))?;
             }
         }
 
-        try!(f.write_str("Accept_at_eoi: "));
+        f.write_str("Accept_at_eoi: ")?;
         for idx in 0..self.accept_at_eoi.len() {
             if let Some(ref ret) = self.accept_at_eoi[idx] {
-                try!(f.write_fmt(format_args!("{} -> {:?}, ", idx, ret)));
+                f.write_fmt(format_args!("{} -> {:?}, ", idx, ret))?;
             }
         }
         Ok(())

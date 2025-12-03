@@ -58,7 +58,7 @@ sense to do it all at the program's compile time. This feature will probably wai
 compiler plugin story stabilizes a bit.
 */
 
-#![cfg_attr(test, feature(test))]
+//#![cfg_attr(test, feature(test))]  // Disabled for stable Rust
 #[cfg(test)]
 extern crate quickcheck;
 
@@ -69,14 +69,13 @@ extern crate matches;
 #[cfg(test)]
 extern crate rand;
 
-#[cfg(test)]
-extern crate test;
+// #[cfg(test)]
+// extern crate test;  // Disabled - requires nightly for benchmarks
 
 extern crate itertools;
 extern crate memchr;
 extern crate num_traits;
 extern crate range_map;
-extern crate refinery;
 extern crate regex_syntax;
 extern crate utf8_ranges;
 
@@ -88,11 +87,12 @@ mod error;
 mod look;
 mod graph;
 mod nfa;
+mod partition;
 mod regex;
 mod runner;
 mod unicode;
 
 pub use error::Error;
 pub use regex::Regex;
-pub type Result<T> = ::std::result::Result<T, Error>;
+pub type Result<T> = std::result::Result<T, Error>;
 

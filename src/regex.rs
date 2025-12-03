@@ -6,17 +6,17 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use error::Error;
-use nfa::{Nfa, NoLooks};
-use runner::anchored::AnchoredEngine;
-use runner::forward_backward::{ForwardBackwardEngine, Prefix};
-use runner::Engine;
+use crate::error::Error;
+use crate::nfa::{Nfa, NoLooks};
+use crate::runner::anchored::AnchoredEngine;
+use crate::runner::forward_backward::{ForwardBackwardEngine, Prefix};
+use crate::runner::Engine;
 use std;
 use std::fmt::Debug;
 
 #[derive(Debug)]
 pub struct Regex {
-    engine: Box<Engine<u8>>,
+    engine: Box<dyn Engine<u8>>,
 }
 
 // An engine that doesn't match anything.
@@ -25,7 +25,7 @@ struct EmptyEngine;
 
 impl<Ret: Debug> Engine<Ret> for EmptyEngine {
     fn find(&self, _: &str) -> Option<(usize, usize, Ret)> { None }
-    fn clone_box(&self) -> Box<Engine<Ret>> { Box::new(EmptyEngine) }
+    fn clone_box(&self) -> Box<dyn Engine<Ret>> { Box::new(EmptyEngine) }
 }
 
 impl Clone for Regex {
@@ -38,31 +38,31 @@ impl Clone for Regex {
 
 impl Regex {
     /// Creates a new `Regex` from a regular expression string.
-    pub fn new(re: &str) -> ::Result<Regex> {
+    pub fn new(re: &str) -> crate::Result<Regex> {
         Regex::new_bounded(re, std::usize::MAX)
     }
 
     /// Creates a new `Regex` from a regular expression string, but only if it doesn't require too
     /// many states.
-    pub fn new_bounded(re: &str, max_states: usize) -> ::Result<Regex> {
-        let nfa = try!(Nfa::from_regex(re));
+    pub fn new_bounded(re: &str, max_states: usize) -> crate::Result<Regex> {
+        let nfa = (Nfa::from_regex(re)?);
         let nfa = nfa.remove_looks();
 
         let eng = if nfa.is_empty() {
-            Box::new(EmptyEngine) as Box<Engine<u8>>
+            Box::new(EmptyEngine) as Box<dyn Engine<u8>>
         } else if nfa.is_anchored() {
-            Box::new(try!(Regex::make_anchored(nfa, max_states))) as Box<Engine<u8>>
+            Box::new((Regex::make_anchored(nfa, max_states)?)) as Box<dyn Engine<u8>>
         } else {
-            Box::new(try!(Regex::make_forward_backward(nfa, max_states))) as Box<Engine<u8>>
+            Box::new((Regex::make_forward_backward(nfa, max_states)?)) as Box<dyn Engine<u8>>
         };
 
         Ok(Regex { engine: eng })
     }
 
     fn make_anchored(nfa: Nfa<u32, NoLooks>, max_states: usize)
-    -> ::Result<AnchoredEngine<u8>> {
-        let nfa = try!(nfa.byte_me(max_states));
-        let dfa = try!(nfa.determinize(max_states))
+    -> crate::Result<AnchoredEngine<u8>> {
+        let nfa = (nfa.byte_me(max_states)?);
+        let dfa = (nfa.determinize(max_states)?)
             .optimize()
             .map_ret(|(_, bytes)| bytes);
         let prog = dfa.compile();
@@ -71,16 +71,16 @@ impl Regex {
     }
 
     fn make_forward_backward(nfa: Nfa<u32, NoLooks>, max_states: usize)
-    -> ::Result<ForwardBackwardEngine<u8>> {
+    -> crate::Result<ForwardBackwardEngine<u8>> {
         if nfa.is_anchored() {
             return Err(Error::InvalidEngine("anchors rule out the forward-backward engine"));
         }
 
-        let f_nfa = try!(try!(nfa.clone().byte_me(max_states)).anchor(max_states));
-        let b_nfa = try!(try!(nfa.byte_me(max_states)).reverse(max_states));
+        let f_nfa = nfa.clone().byte_me(max_states)?.anchor(max_states)?;
+        let b_nfa = nfa.byte_me(max_states)?.reverse(max_states)?;
 
-        let f_dfa = try!(f_nfa.determinize(max_states)).optimize();
-        let b_dfa = try!(b_nfa.determinize_longest(max_states)).optimize();
+        let f_dfa = f_nfa.determinize(max_states)?.optimize();
+        let b_dfa = b_nfa.determinize_longest(max_states)?.optimize();
         let b_dfa = b_dfa.map_ret(|(_, bytes)| bytes);
 
         let b_prog = b_dfa.compile();
