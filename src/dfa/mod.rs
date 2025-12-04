@@ -389,6 +389,21 @@ impl<Ret: RetTrait> Dfa<Ret> {
 
 impl<Ret: Debug> Debug for Dfa<Ret> {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        // Helper function to format a byte with its ASCII character if printable
+        fn format_byte(byte: u8) -> String {
+            if byte >= 32 && byte < 127 {
+                format!("{} ({})", byte, byte as char)
+            } else {
+                match byte {
+                    b'\n' => format!("{} (\\n)", byte),
+                    b'\r' => format!("{} (\\r)", byte),
+                    b'\t' => format!("{} (\\t)", byte),
+                    0 => format!("{} (\\0)", byte),
+                    _ => format!("{} (\\x{:02x})", byte, byte),
+                }
+            }
+        }
+
         f.write_fmt(format_args!("Dfa ({} states):\n", self.states.len()))?;
 
         f.write_fmt(format_args!("Init: {:?}\n", self.init))?;
@@ -404,7 +419,9 @@ impl<Ret: Debug> Debug for Dfa<Ret> {
                 // Cap it at 5 transitions, since it gets unreadable otherwise.
                 for &(range, target) in st.transitions.ranges_values().take(5) {
                     f.write_fmt(format_args!("\t\t\t{} -- {} => {}\n",
-                                                  range.start, range.end, target))?;
+                                                  format_byte(range.start),
+                                                  format_byte(range.end),
+                                                  target))?;
                 }
                 if st.transitions.num_ranges() > 5 {
                     f.write_str("\t\t\t...\n")?;

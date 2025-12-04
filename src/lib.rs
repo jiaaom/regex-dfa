@@ -82,15 +82,17 @@ extern crate utf8_ranges;
 #[macro_use]
 extern crate lazy_static;
 
-mod dfa;
 mod error;
 mod look;
 mod graph;
-mod nfa;
 mod partition;
 mod regex;
 mod runner;
 mod unicode;
+
+// Public modules for advanced usage and inspection
+pub mod dfa;
+pub mod nfa;
 
 pub use error::Error;
 pub use regex::Regex;
