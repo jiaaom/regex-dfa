@@ -276,6 +276,28 @@ impl<Tok: Debug + PrimInt, L: Lookability> Nfa<Tok, L> {
     }
 }
 
+/// Format a token value, showing the character representation if it's printable ASCII.
+fn format_tok<Tok: PrimInt + Debug>(tok: Tok) -> String {
+    if let Some(val) = tok.to_u32() {
+        if val >= 32 && val < 127 {
+            format!("{} ('{}')", val, char::from_u32(val).unwrap())
+        } else {
+            format!("{}", val)
+        }
+    } else {
+        format!("{:?}", tok)
+    }
+}
+
+/// Format a range of tokens, showing character representations if printable ASCII.
+fn format_range<Tok: PrimInt + Debug>(start: Tok, end: Tok) -> String {
+    if start == end {
+        format_tok(start)
+    } else {
+        format!("{} -- {}", format_tok(start), format_tok(end))
+    }
+}
+
 impl<Tok: Debug + PrimInt, L: Lookability> Debug for Nfa<Tok, L> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         f.write_fmt(format_args!("Nfa ({} states):\n", self.states.len()))?;
@@ -293,8 +315,8 @@ impl<Tok: Debug + PrimInt, L: Lookability> Debug for Nfa<Tok, L> {
                 f.write_str("\t\tConsuming:\n")?;
                 // Cap it at 10 transitions, since it gets unreadable otherwise.
                 for &(range, target) in st.consuming.ranges_values().take(10) {
-                    f.write_fmt(format_args!("\t\t\t{:?} -- {:?} => {}\n",
-                                                  range.start, range.end, target))?;
+                    f.write_fmt(format_args!("\t\t\t{} => {}\n",
+                                                  format_range(range.start, range.end), target))?;
                 }
                 if st.consuming.num_ranges() > 10 {
                     f.write_str("\t\t\t...\n")?;

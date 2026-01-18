@@ -22,6 +22,11 @@
 /// cargo run --example dfa_internals -- "pattern" --max-states 5000
 /// ```
 ///
+/// Show only NFA stages (steps 1 and 2):
+/// ```bash
+/// cargo run --example dfa_internals -- "a?b" --nfa
+/// ```
+///
 /// # What This Shows
 ///
 /// For each pattern, this example displays:
@@ -49,6 +54,7 @@ fn main() {
     // Parse command line arguments
     let mut pattern_arg: Option<String> = None;
     let mut max_states = 10000;
+    let mut nfa_only = false;
     let mut i = 1;
 
     while i < args.len() {
@@ -64,6 +70,10 @@ fn main() {
                     eprintln!("--max-states requires a value");
                     std::process::exit(1);
                 }
+            }
+            "--nfa" => {
+                nfa_only = true;
+                i += 1;
             }
             "--help" | "-h" => {
                 print_usage();
@@ -85,7 +95,7 @@ fn main() {
 
     // If a pattern was provided, analyze it
     if let Some(pattern) = pattern_arg {
-        compile_and_show_dfa(&pattern, "User-provided pattern", max_states);
+        compile_and_show_dfa(&pattern, "User-provided pattern", max_states, nfa_only);
     } else {
         // Run built-in examples
         println!("Running built-in examples. Use --help for usage information.\n");
@@ -112,6 +122,7 @@ fn print_usage() {
     println!("  cargo run --example dfa_internals -- <pattern>     Analyze a specific pattern");
     println!();
     println!("Options:");
+    println!("  --nfa               Show only NFA stages (steps 1 and 2)");
     println!("  --max-states <n>    Set maximum DFA states (default: 10000)");
     println!("  --help, -h          Show this help message");
     println!();
@@ -120,6 +131,7 @@ fn print_usage() {
     println!("  cargo run --example dfa_internals -- \"\\d{{4}}-\\d{{2}}-\\d{{2}}\"");
     println!("  cargo run --example dfa_internals -- \"\\bword\\b\"");
     println!("  cargo run --example dfa_internals -- \"(cat|dog|bird)\" --max-states 5000");
+    println!("  cargo run --example dfa_internals -- \"a?b\" --nfa");
 }
 
 /// Simple pattern: literal string
@@ -127,7 +139,7 @@ fn example_simple_pattern() {
     println!("--- Example 1: Simple Literal Pattern ---");
     let pattern = r"hello";
 
-    compile_and_show_dfa(pattern, "Simple literal string", 10000);
+    compile_and_show_dfa(pattern, "Simple literal string", 10000, false);
 }
 
 /// Pattern with word boundaries
@@ -135,7 +147,7 @@ fn example_word_boundary() {
     println!("\n--- Example 2: Word Boundary Pattern ---");
     let pattern = r"\bword\b";
 
-    compile_and_show_dfa(pattern, "Word boundary pattern", 10000);
+    compile_and_show_dfa(pattern, "Word boundary pattern", 10000, false);
 }
 
 /// Date pattern with digits
@@ -143,7 +155,7 @@ fn example_date_pattern() {
     println!("\n--- Example 3: Date Pattern ---");
     let pattern = r"\d{4}-\d{2}-\d{2}";
 
-    compile_and_show_dfa(pattern, "Date pattern (YYYY-MM-DD)", 10000);
+    compile_and_show_dfa(pattern, "Date pattern (YYYY-MM-DD)", 10000, false);
 }
 
 /// Alternation pattern
@@ -151,14 +163,16 @@ fn example_alternation() {
     println!("\n--- Example 4: Alternation Pattern ---");
     let pattern = r"(cat|dog|bird)";
 
-    compile_and_show_dfa(pattern, "Alternation of keywords", 10000);
+    compile_and_show_dfa(pattern, "Alternation of keywords", 10000, false);
 }
 
 /// Compile a pattern and show the DFA structure at each stage
-fn compile_and_show_dfa(pattern: &str, description: &str, max_states: usize) {
+fn compile_and_show_dfa(pattern: &str, description: &str, max_states: usize, nfa_only: bool) {
     println!("Pattern: {}", pattern);
     println!("Description: {}", description);
-    println!("Max states: {}", max_states);
+    if !nfa_only {
+        println!("Max states: {}", max_states);
+    }
     println!();
 
     // Step 1: Parse regex into NFA with looks
@@ -180,6 +194,12 @@ fn compile_and_show_dfa(pattern: &str, description: &str, max_states: usize) {
     println!("  ✓ NFA after removing looks: {} states", nfa_no_looks.num_states());
     println!("{:#?}", nfa_no_looks);
     println!();
+
+    // If --nfa flag is set, stop here
+    if nfa_only {
+        println!("(Stopped after NFA stages due to --nfa flag)");
+        return;
+    }
 
     // Step 3: Convert to byte-based NFA
     println!("Step 3: Convert to byte-based NFA (UTF-8)");
